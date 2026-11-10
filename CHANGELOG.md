@@ -11,6 +11,7 @@
 - Redact cookie/authentication response headers by default.
 - Handle non-UTF-8 headers, long export filenames, and closed output pipes.
 - Add a loopback-only `netscope-demo` server for a repeatable first scan.
+- Require Python 3.11+ for the patched dnspython dependency.
 - Raise aiohttp and dnspython minimums to releases without known advisories at review time.
 - Add live local DNS/TLS tests, subprocess tests, and multi-OS/Python CI.
 - Update recording, contribution, and publishing documentation.

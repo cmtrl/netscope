@@ -19,7 +19,7 @@ CLI design. Feedback and bug reports are welcome.
 
 ## Install
 
-Python **3.10+**. No administrator privileges needed.
+Python **3.11+**. No administrator privileges needed.
 
 If you use pipx:
 
@@ -123,7 +123,7 @@ python -W error -m unittest discover -s tests -v
 The code is split into `cli.py`, `scanner.py`, `resolver.py`, `utils.py`, and the
 local demo fixture in `demo.py`. Tests use local HTTP/TLS and DNS servers; they
 do not scan public hosts. [CI](https://github.com/cmtrl/netscope/actions/workflows/ci.yml)
-checks Linux, macOS, Windows, and Python 3.10, 3.12, and 3.14.
+checks Linux, macOS, Windows, and Python 3.11, 3.12, and 3.14.
 
 Optional development checks:
 
