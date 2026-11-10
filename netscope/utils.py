@@ -14,7 +14,7 @@ import unicodedata
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
-VERSION = "1.1.0"
+VERSION = "1.1.1"
 SCHEMA_VERSION = "1.1"
 COMMON_PORTS = (21, 22, 80, 443, 8080, 8443)
 MAX_PORTS = 1024

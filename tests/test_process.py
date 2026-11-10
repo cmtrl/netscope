@@ -72,7 +72,7 @@ class CommandProcessTests(unittest.TestCase):
             self.assertNotIn("\x1b", result.stdout)
         result = subprocess.run([sys.executable, "main.py", "--version"], capture_output=True, text=True, timeout=10)
         self.assertEqual(result.returncode, 0)
-        self.assertIn("1.1.0", result.stdout)
+        self.assertIn("1.1.1", result.stdout)
 
     def test_invalid_arguments_never_write_json(self):
         result = self.command([self.url, "-p", "1-65535", "--json"])

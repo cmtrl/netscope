@@ -2,7 +2,7 @@
 
 A Python CLI for checking DNS records, TCP ports, and HTTP headers.
 
-By **cmtrl cmtrl** · [@cmtrl](https://github.com/cmtrl)
+By **cmtrl** · [@cmtrl](https://github.com/cmtrl)
 
 ```text
  _   _      _   ____
@@ -126,9 +126,8 @@ for release notes.
 ## Credits
 
 NetScope's initial implementation, tests, and documentation were developed with
-assistance from OpenAI Codex. Project direction and maintenance by cmtrl
-cmtrl (@cmtrl).
+assistance from OpenAI Codex. Project direction and maintenance by cmtrl.
 
 ## License
 
-[MIT](https://github.com/cmtrl/netscope/blob/main/LICENSE) · Copyright (c) 2026 cmtrl cmtrl (cmtrl).
+[MIT](https://github.com/cmtrl/netscope/blob/main/LICENSE) · Copyright (c) 2026 cmtrl.

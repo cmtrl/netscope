@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1
+
+- Use cmtrl consistently in project credits, licensing, and package metadata.
+
 ## 1.1.0
 
 - Accept HTTP(S) URLs and a positional target, preserving `-t` compatibility.
