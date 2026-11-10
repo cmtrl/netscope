@@ -1,59 +1,31 @@
-# NetScope demo
+# Local example
 
-The example runs against a small HTTP server on your own machine. It shows a
-TCP port check, HTTP headers, and a JSON report. DNS enumeration is skipped
-because the target is an IP address.
+NetScope includes a small HTTP server for trying the tool on your own machine.
+It listens only on `127.0.0.1`.
 
-## Videos
-
-These silent, captioned clips were generated from real NetScope output against
-the local demo server:
-
-- [Portrait MP4](https://github.com/cmtrl/netscope/raw/refs/heads/main/docs/assets/netscope-demo-x.mp4)
-- [Landscape MP4](https://github.com/cmtrl/netscope/raw/refs/heads/main/docs/assets/netscope-demo-landscape.mp4)
-
-## Run it yourself
-
-Install NetScope 1.1.0 or newer in a virtual environment. Start the server:
+Start the server in one terminal:
 
 ```bash
 netscope-demo
 ```
 
-In another terminal, with the same environment active:
+In a second terminal, with NetScope available:
 
 ```bash
 netscope http://127.0.0.1:8080 -p 8080 -o json --output-file demo.json
 ```
 
-Expected output:
+You should see port 8080 open, HTTP 200, and CSP present. The server deliberately
+leaves out X-Frame-Options to show the missing-header result. HSTS doesn't apply
+to plain HTTP, and DNS enumeration is skipped for the IP target.
 
-- Port 8080 is open, and HTTP returns 200.
-- CSP is present; X-Frame-Options is missing on purpose.
-- HSTS is not applicable to plain HTTP.
-- The report is saved as `demo.json`.
-
-The server listens only on `127.0.0.1`. Stop it with Ctrl+C. If 8080 is already
-in use, start it with `--port 8081` and change the URL and `-p` value to match.
-
-To print a short summary from the report:
+The report is saved to `demo.json`. To inspect its summary:
 
 ```bash
 python -c "import json; r=json.load(open('demo.json', encoding='utf-8')); print(json.dumps(r['summary'], indent=2))"
 ```
 
-## Recording
+If 8080 is busy, use `netscope-demo --port 8081` and change the scan URL and
+`-p` value to 8081. Stop the server with Ctrl+C.
 
-A 25–30 second clip is enough for this example. Capture the terminal window at
-1280×720 and 30 fps, with the font large enough to read on a phone.
-
-Show the command, pause on the open port and HTTP response, then scroll to the
-header checks. Finish with the JSON summary and repository URL. Do the install
-and server setup before recording.
-
-The clip works with captions and no audio. If you add your voice, explain what
-you're checking and what the results mean. The missing header is a presence
-check, not a confirmed vulnerability.
-
-Export as MP4 and watch it once before posting. In OBS, you can convert an MKV
-recording using **File → Remux Recordings**.
+See the [reference](REFERENCE.md) for the meaning of each result and JSON field.

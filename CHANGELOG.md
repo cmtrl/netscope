@@ -14,7 +14,7 @@
 - Require Python 3.11+ for the patched dnspython dependency.
 - Raise aiohttp and dnspython minimums to releases without known advisories at review time.
 - Add live local DNS/TLS tests, subprocess tests, and multi-OS/Python CI.
-- Update recording, contribution, and publishing documentation.
+- Update contribution and publishing documentation.
 
 ## 1.0.0
 

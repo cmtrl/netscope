@@ -1,8 +1,0 @@
-My first public Python project: NetScope.
-
-It's a small CLI for DNS records, TCP ports and HTTP headers, with JSON export. I'm using it to learn async Python and networking.
-
-pip install cmtrl-netscope
-https://github.com/cmtrl/netscope
-
-Feedback welcome.

@@ -83,7 +83,7 @@ If 8080 is busy, start `netscope-demo --port 8081` and use 8081 in the scan too.
 ![Header checks against the local demo server](https://raw.githubusercontent.com/cmtrl/netscope/main/docs/assets/local-demo.png)
 
 [Watch the demo](https://github.com/cmtrl/netscope/raw/refs/heads/main/docs/assets/netscope-demo-x.mp4)
-· [Run or record your own](https://github.com/cmtrl/netscope/blob/main/docs/DEMO.md)
+· [Local example](https://github.com/cmtrl/netscope/blob/main/docs/DEMO.md)
 
 ## Reading the results
 
