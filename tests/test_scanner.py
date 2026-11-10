@@ -41,7 +41,7 @@ class DnsTests(unittest.IsolatedAsyncioTestCase):
             return [MagicMock(to_text=lambda: "record value")]
 
         resolver = MagicMock(resolve=resolve)
-        with patch("netscope.scanner.dns.asyncresolver.Resolver", return_value=resolver):
+        with patch("netscope.resolver.dns.asyncresolver.Resolver", return_value=resolver):
             result = await enumerate_dns("example.com", 0.2)
         self.assertEqual(peak, 5)
         self.assertEqual(result["status"], "partial")
@@ -50,7 +50,7 @@ class DnsTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["records"]["MX"]["values"], ["record value"])
 
     async def test_ip_skips_forward_dns(self):
-        with patch("netscope.scanner.dns.asyncresolver.Resolver") as resolver:
+        with patch("netscope.resolver.dns.asyncresolver.Resolver") as resolver:
             self.assertEqual((await enumerate_dns("::1", 1))["status"], "skipped")
             resolver.assert_not_called()
 
@@ -58,7 +58,7 @@ class DnsTests(unittest.IsolatedAsyncioTestCase):
         for error in (dns.resolver.NXDOMAIN(), dns.resolver.NoNameservers()):
             with self.subTest(error=error):
                 resolver = MagicMock(resolve=AsyncMock(side_effect=error))
-                with patch("netscope.scanner.dns.asyncresolver.Resolver", return_value=resolver):
+                with patch("netscope.resolver.dns.asyncresolver.Resolver", return_value=resolver):
                     result = await enumerate_dns("absent.invalid", 0.1)
                 self.assertEqual(result["status"], "error")
                 self.assertEqual(len(result["records"]), 5)
@@ -116,14 +116,14 @@ class PortTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(result["results"]), 12)
 
     async def test_resolution_error_preserves_structured_failure(self):
-        with patch.object(asyncio.get_running_loop(), "getaddrinfo", AsyncMock(side_effect=socket.gaierror("unknown"))):
+        with patch("netscope.resolver.AsyncResolver.resolve", AsyncMock(side_effect=socket.gaierror("unknown"))):
             result = await scan_ports("absent.invalid", 0.1, 2)
         self.assertEqual(result["status"], "error")
         self.assertEqual(result["results"], [])
 
     async def test_address_deduplication_and_cap(self):
-        entries = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (f"192.0.2.{i}", 0)) for i in range(1, 20)]
-        with patch.object(asyncio.get_running_loop(), "getaddrinfo", AsyncMock(return_value=entries + entries)):
+        entries = [{"host": f"192.0.2.{i}"} for i in range(1, 20)]
+        with patch("netscope.resolver.AsyncResolver.resolve", AsyncMock(return_value=entries + entries)):
             result = await resolve_addresses("example.com", 1)
         self.assertEqual(len(result["addresses"]), 16)
         self.assertTrue(result["truncated"])
@@ -263,7 +263,7 @@ class ReportTests(unittest.IsolatedAsyncioTestCase):
                 ):
                     report = await scan_target("127.0.0.1")
                 self.assertEqual(report["status"], expected)
-                self.assertEqual(report["schema_version"], "1.0")
+                self.assertEqual(report["schema_version"], "1.1")
 
     async def test_api_rejects_bad_settings(self):
         for kwargs in ({"timeout": float("nan")}, {"timeout": -1}, {"concurrency": 0}, {"concurrency": 257}):

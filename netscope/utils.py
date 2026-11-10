@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ipaddress
+from dataclasses import dataclass
 import json
 import math
 import os
@@ -11,10 +12,12 @@ import re
 import tempfile
 import unicodedata
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
-VERSION = "1.0.0"
-SCHEMA_VERSION = "1.0"
+VERSION = "1.1.0"
+SCHEMA_VERSION = "1.1"
 COMMON_PORTS = (21, 22, 80, 443, 8080, 8443)
+MAX_PORTS = 1024
 SERVICES = {21: "FTP", 22: "SSH", 80: "HTTP", 443: "HTTPS", 8080: "HTTP-alt", 8443: "HTTPS-alt"}
 
 
@@ -64,6 +67,67 @@ def url_host(target: str) -> str:
     return f"[{target}]" if ":" in target else target
 
 
+@dataclass(frozen=True)
+class Target:
+    host: str
+    url: str | None = None
+    port: int | None = None
+
+
+def parse_target(value: str) -> Target:
+    """Accept a bare host or an explicit HTTP(S) endpoint without credentials."""
+    value = value.strip()
+    if "://" not in value:
+        return Target(normalize_target(value))
+    if any(char.isspace() or unicodedata.category(char).startswith("C") for char in value):
+        raise ValueError("URL must not contain whitespace or control characters")
+    try:
+        parsed = urlsplit(value)
+        if parsed.scheme not in {"http", "https"}:
+            raise ValueError("URL scheme must be http or https")
+        if parsed.username is not None or parsed.password is not None:
+            raise ValueError("credentials are not allowed in target URLs")
+        if parsed.query or parsed.fragment:
+            raise ValueError("remove the query string and fragment from the target URL")
+        host = normalize_target(parsed.hostname or "")
+        port = parsed.port
+        if port is not None and not 1 <= port <= 65535:
+            raise ValueError("URL port must be between 1 and 65535")
+        if parsed.netloc.endswith(":"):
+            raise ValueError("URL port must not be empty")
+    except ValueError as exc:
+        raise ValueError(f"invalid target URL: {exc}") from exc
+    authority = url_host(host) + (f":{port}" if port is not None else "")
+    return Target(host, urlunsplit((parsed.scheme, authority, parsed.path or "/", "", "")), port)
+
+
+def parse_ports(value: str) -> tuple[int, ...]:
+    """Parse comma-separated ports and inclusive ranges, bounding queued work."""
+    ports: set[int] = set()
+    for item in value.split(","):
+        item = item.strip()
+        if not re.fullmatch(r"[0-9]+(?:-[0-9]+)?", item):
+            raise ValueError("ports must be comma-separated numbers or ranges, e.g. 22,80,8000-8005")
+        endpoints = item.split("-")
+        start, end = int(endpoints[0]), int(endpoints[-1])
+        if not 1 <= start <= end <= 65535:
+            raise ValueError("port ranges must increase and stay between 1 and 65535")
+        if end - start + 1 > MAX_PORTS:
+            raise ValueError(f"select at most {MAX_PORTS} ports")
+        ports.update(range(start, end + 1))
+        if len(ports) > MAX_PORTS:
+            raise ValueError(f"select at most {MAX_PORTS} ports")
+    return tuple(sorted(ports))
+
+
+def validate_ports(ports: tuple[int, ...]) -> tuple[int, ...]:
+    if not ports or len(ports) > MAX_PORTS:
+        raise ValueError(f"select between 1 and {MAX_PORTS} ports")
+    if any(type(port) is not int or not 1 <= port <= 65535 for port in ports):
+        raise ValueError("each port must be an integer between 1 and 65535")
+    return tuple(sorted(set(ports)))
+
+
 def positive_timeout(value: str) -> float:
     try:
         timeout = float(value)
@@ -90,7 +154,7 @@ def write_json(report: dict[str, Any], destination: Path) -> Path:
             mode="w",
             encoding="utf-8",
             dir=destination.parent,
-            prefix=f".{destination.name}.",
+            prefix=".netscope-",
             suffix=".tmp",
             delete=False,
         ) as stream:

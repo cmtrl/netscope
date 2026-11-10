@@ -1,0 +1,29 @@
+name: Bug report
+description: Report something that did not work
+body:
+  - type: input
+    id: version
+    attributes:
+      label: NetScope and Python versions
+      placeholder: NetScope 1.1.0, Python 3.12
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Command and steps to reproduce
+      description: Replace private hostnames, tokens, and other sensitive values.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual result
+    validations:
+      required: true
