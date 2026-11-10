@@ -1,6 +1,7 @@
 # NetScope
 
-A Python CLI for checking DNS records, common TCP ports, and HTTP headers.
+A small Python CLI for DNS records, TCP ports, and HTTP headers. Useful for
+checking a host or taking a quick look at a local web app.
 
 By **Ayoub Alshammari** · [@cmtrl](https://github.com/cmtrl)
 
@@ -13,30 +14,20 @@ By **Ayoub Alshammari** · [@cmtrl](https://github.com/cmtrl)
                                |_|
 ```
 
-I'm using this project to work on Python networking, async code, and CLI design.
-It's a starting point I plan to keep improving as I learn more about how these
-checks work.
+I'm using this project to learn more about Python networking, async code, and
+CLI design. Feedback and bug reports are welcome.
 
-## What it does
+## Install
 
-- Looks up A, AAAA, MX, TXT, and NS records concurrently.
-- Checks TCP ports `21`, `22`, `80`, `443`, `8080`, and `8443`.
-- Fetches HTTP and HTTPS response headers.
-- Checks for HSTS, CSP, and X-Frame-Options.
-- Shows technology hints from headers such as `Server` and `X-Powered-By`.
-- Displays results in the terminal and optionally saves them as JSON.
+Python **3.10+**. No administrator privileges needed.
 
-The checks run with `asyncio`, `aiohttp`, and `dnspython`. The terminal output
-uses `rich`.
+If you use pipx:
 
-Available on [PyPI as `cmtrl-netscope`](https://pypi.org/project/cmtrl-netscope/).
-The command is `netscope`.
+```bash
+pipx install cmtrl-netscope
+```
 
-## Setup
-
-Requires Python **3.10 or newer**. No root privileges needed.
-
-Create a virtual environment and install from PyPI:
+Or use a virtual environment:
 
 ```bash
 python -m venv .venv
@@ -45,98 +36,107 @@ python -m pip install cmtrl-netscope
 ```
 
 On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1` instead.
-Use `python3` in place of `python` if that's how Python is installed on your system.
+To upgrade an existing installation: `pipx upgrade cmtrl-netscope` or
+`python -m pip install --upgrade cmtrl-netscope` in its virtual environment.
 
-## Usage
-
-```bash
-netscope -t example.com
-```
-
-Save a JSON report:
+## Try it
 
 ```bash
-netscope -t example.com -o json --output-file report.json
+# DNS, common TCP ports, and HTTP(S) headers
+netscope example.com
+
+# A specific web app: preserve the URL's scheme, port, and path
+netscope http://127.0.0.1:8080/health -p 8080
+
+# Custom ports and inclusive ranges, up to 1024 ports
+netscope example.com -p 22,80,443,8000-8005
+
+# Save a report
+netscope example.com -o json --output-file report.json
+
+# JSON on stdout, suitable for scripts and pipes
+netscope example.com --json > report.json
+
+# All captured HTTP headers in the terminal
+netscope example.com --verbose
 ```
 
-Set a shorter timeout or change the number of concurrent TCP checks:
+The original `netscope -t example.com` syntax still works.
+`--timeout 3` changes the per-operation timeout; `--concurrency 12` limits
+simultaneous TCP checks. Run `netscope --help` for all options.
+
+## A local demo in two terminals
+
+Start the included HTTP fixture:
 
 ```bash
-netscope -t example.com --timeout 3 --concurrency 12
+netscope-demo
 ```
 
-IP addresses work too. Forward DNS enumeration is skipped for IP targets:
+Then open another terminal with NetScope available and run:
 
 ```bash
-netscope -t 127.0.0.1
-netscope -t ::1
+netscope http://127.0.0.1:8080 -p 8080 -o json --output-file demo.json
 ```
 
-Use a bare hostname or IP address, without `https://`, a path, or a port number.
+This runs a real scan against your own machine. Expect one open TCP port,
+HTTP 200, CSP present, and X-Frame-Options missing. The fixture deliberately
+omits that header so you can see the check. HSTS is not applicable to plain
+HTTP, and forward DNS is skipped for an IP target. Stop the server with Ctrl+C.
+If port 8080 is busy, use `netscope-demo --port 8081` and change the scan URL and
+port to match.
 
-```bash
-netscope --help
-```
+There is a [recording walkthrough](https://github.com/cmtrl/netscope/blob/main/docs/DEMO.md)
+with exact commands, captions, and an optional voiceover.
 
-To install from source instead, run these commands in your virtual environment:
+## What the checks mean
+
+- DNS queries A, AAAA, MX, TXT, and NS concurrently. Local hosts-file entries
+  and localhost work for connections; DNS enumeration shows actual DNS records.
+- TCP results distinguish open, refused, timed-out, and failed connections.
+  Service names are conventional port hints, not confirmed application names.
+- Bare hosts get HTTP/80 and HTTPS/443 checks. A URL checks only that endpoint;
+  an explicit URL port is also included in the default TCP selection.
+- HTTPS verification stays enabled. Redirects are reported without being followed.
+- HSTS, CSP, and X-Frame-Options checks report header presence. They do not
+  validate a policy or prove that a site is secure or vulnerable.
+- Cookie and authentication response headers are redacted in both terminal
+  output and JSON. Use `--show-sensitive-headers` only when you need those values.
+
+Use NetScope on systems you own or have permission to check. It is a focused
+reconnaissance tool, not a vulnerability scanner.
+
+See the [reference](https://github.com/cmtrl/netscope/blob/main/docs/REFERENCE.md)
+for JSON fields, proxy behavior, timeouts, and exit codes.
+
+## Working on the code
 
 ```bash
 git clone https://github.com/cmtrl/netscope.git
 cd netscope
-python -m pip install .
-netscope -t example.com
-# Or: python -m netscope -t example.com
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+python -W error -m unittest discover -s tests -v
 ```
 
-## A few things to know
+The code is split into `cli.py`, `scanner.py`, `resolver.py`, `utils.py`, and the
+local demo fixture in `demo.py`. Tests use local HTTP/TLS and DNS servers; they
+do not scan public hosts. [CI](https://github.com/cmtrl/netscope/actions/workflows/ci.yml)
+checks Linux, macOS, Windows, and Python 3.10, 3.12, and 3.14.
 
-Use this on systems you own or have permission to check.
-
-An open port means a TCP connection succeeded. It doesn't confirm which service
-is running. A missing security header isn't automatically a vulnerability, and
-technology headers can be wrong.
-
-HTTP checks use ports 80 and 443. Ports 8080 and 8443 get TCP checks only.
-Redirects are shown without being followed, and HTTPS certificate verification
-stays enabled. A failed check doesn't discard results from the other checks.
-
-More detail on result states, timeouts, proxies, JSON fields, and exit codes is
-in [docs/REFERENCE.md](https://github.com/cmtrl/netscope/blob/main/docs/REFERENCE.md).
-
-## Working on the code
-
-Clone the source as shown above. For development, `python -m pip install -e .`
-lets the installed command use your local edits.
-
-```text
-main.py              entry point
-netscope/cli.py      arguments and terminal output
-netscope/scanner.py  DNS, TCP, and HTTP checks
-netscope/utils.py    input validation and JSON export
-tests/              tests using local servers and simulated failures
-```
-
-Run the tests:
+Optional development checks:
 
 ```bash
-python -m unittest discover -s tests -v
-```
-
-Optional development tools:
-
-```bash
-python -m pip install ruff build
+python -m pip install ruff build twine
 ruff check .
+ruff format --check .
 python -m build
+python -m twine check --strict dist/*
 ```
 
-Some things I'd like to work on next:
-
-- Letting the user choose which ports to check.
-- Making the output easier to skim when a host has several IP addresses.
-- Adding more tests as I change the scanner.
-
-If you find a bug or have a suggestion, an issue or pull request is welcome.
+See [CONTRIBUTING.md](https://github.com/cmtrl/netscope/blob/main/CONTRIBUTING.md)
+and the [changelog](https://github.com/cmtrl/netscope/blob/main/CHANGELOG.md).
 
 ## License
 

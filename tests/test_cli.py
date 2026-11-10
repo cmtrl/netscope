@@ -19,7 +19,7 @@ class CliTests(unittest.TestCase):
     def test_invalid_arguments(self):
         for arguments in (
             [],
-            ["-t", "https://example.com"],
+            ["-t", "ftp://example.com"],
             ["-t", "example.com", "--timeout", "nan"],
             ["-t", "example.com", "--concurrency", "0"],
             ["-t", "example.com", "--output-file", "report.json"],
