@@ -10,6 +10,8 @@ import sys
 import tempfile
 import unittest
 
+from netscope import __version__
+
 
 class CommandProcessTests(unittest.TestCase):
     def setUp(self):
@@ -72,7 +74,55 @@ class CommandProcessTests(unittest.TestCase):
             self.assertNotIn("\x1b", result.stdout)
         result = subprocess.run([sys.executable, "main.py", "--version"], capture_output=True, text=True, timeout=10)
         self.assertEqual(result.returncode, 0)
-        self.assertIn("1.1.1", result.stdout)
+        self.assertEqual(result.stdout.strip(), f"NetScope {__version__}")
+
+    def test_http_only_exports_skipped_sections(self):
+        result = self.command([self.url, "--only", "http", "--json"])
+        self.assertEqual(result.returncode, 0, result.stderr)
+        report = json.loads(result.stdout)
+        self.assertEqual(report["status"], "completed")
+        self.assertEqual(report["settings"]["checks"], ["http"])
+        self.assertEqual(report["settings"]["ports"], [])
+        self.assertEqual(report["dns"]["status"], "skipped")
+        self.assertEqual(report["ports"]["status"], "skipped")
+        self.assertEqual(report["http"]["results"][0]["status_code"], 200)
+
+    def test_open_view_keeps_closed_port_results_in_json(self):
+        with socket.socket() as closed, tempfile.TemporaryDirectory() as directory:
+            # Reserve a non-listening port so another process cannot claim it.
+            closed.bind(("127.0.0.1", 0))
+            closed_port = closed.getsockname()[1]
+            path = Path(directory) / "report.json"
+            result = self.command(
+                [
+                    self.url,
+                    "--only",
+                    "ports",
+                    "-p",
+                    f"{self.port},{closed_port}",
+                    "--open",
+                    "--no-color",
+                    "-o",
+                    "json",
+                    "--output-file",
+                    str(path),
+                ]
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                {item["port"]: item["status"] for item in report["ports"]["results"]},
+                {self.port: "open", closed_port: "closed"},
+            )
+            self.assertEqual(report["http"]["status"], "skipped")
+            self.assertEqual(report["settings"]["http_urls"], [])
+            self.assertIn("1 closed", result.stdout)
+            self.assertIn("1 other probe results hidden", result.stdout)
+            self.assertNotIn(str(closed_port), result.stdout)
+
+            as_json = self.command([self.url, "--only", "ports", "-p", str(closed_port), "--open", "--json"])
+            self.assertEqual(as_json.returncode, 0, as_json.stderr)
+            self.assertEqual(json.loads(as_json.stdout)["ports"]["results"][0]["status"], "closed")
 
     def test_invalid_arguments_never_write_json(self):
         result = self.command([self.url, "-p", "1-65535", "--json"])

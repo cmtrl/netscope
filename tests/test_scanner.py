@@ -263,7 +263,7 @@ class ReportTests(unittest.IsolatedAsyncioTestCase):
                 ):
                     report = await scan_target("127.0.0.1")
                 self.assertEqual(report["status"], expected)
-                self.assertEqual(report["schema_version"], "1.1")
+                self.assertEqual(report["schema_version"], "1.2")
 
     async def test_api_rejects_bad_settings(self):
         for kwargs in ({"timeout": float("nan")}, {"timeout": -1}, {"concurrency": 0}, {"concurrency": 257}):

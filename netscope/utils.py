@@ -14,8 +14,9 @@ import unicodedata
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
 
-VERSION = "1.1.1"
-SCHEMA_VERSION = "1.1"
+VERSION = "1.2.0"
+SCHEMA_VERSION = "1.2"
+CHECKS = ("dns", "ports", "http")
 COMMON_PORTS = (21, 22, 80, 443, 8080, 8443)
 MAX_PORTS = 1024
 SERVICES = {21: "FTP", 22: "SSH", 80: "HTTP", 443: "HTTPS", 8080: "HTTP-alt", 8443: "HTTPS-alt"}
@@ -126,6 +127,16 @@ def validate_ports(ports: tuple[int, ...]) -> tuple[int, ...]:
     if any(type(port) is not int or not 1 <= port <= 65535 for port in ports):
         raise ValueError("each port must be an integer between 1 and 65535")
     return tuple(sorted(set(ports)))
+
+
+def validate_checks(checks: tuple[str, ...]) -> tuple[str, ...]:
+    if not isinstance(checks, (tuple, list)) or not checks or any(kind not in CHECKS for kind in checks):
+        raise ValueError("select one or more checks: dns, ports, http")
+    return tuple(kind for kind in CHECKS if kind in checks)
+
+
+def parse_checks(value: str) -> tuple[str, ...]:
+    return validate_checks(tuple(kind.strip().lower() for kind in value.split(",")))
 
 
 def positive_timeout(value: str) -> float:

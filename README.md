@@ -48,6 +48,19 @@ A bare hostname checks DNS, the common TCP ports, HTTP on 80, and HTTPS on 443.
 A URL checks that HTTP endpoint, including its port and path. The `-p` option
 sets the TCP ports; it accepts lists and ranges, up to 1024 ports.
 
+Run only the checks you need:
+
+```bash
+netscope example.com --only dns
+netscope example.com --only ports -p 22,80,443,8000-8010 --open
+netscope https://example.com --only http
+```
+
+Combine checks with `--only dns,http`. `--open` keeps the terminal table short
+by showing only open TCP ports. The summary still counts every probe, and JSON
+exports keep every result, including closed ports, timeouts, and errors.
+HTTP and TCP checks still resolve hostnames when DNS enumeration is disabled.
+
 Save the results to a file:
 
 ```bash

@@ -17,7 +17,18 @@ import dns.resolver
 from multidict import CIMultiDict
 
 from .resolver import AsyncResolver, resolver_context
-from .utils import COMMON_PORTS, SCHEMA_VERSION, SERVICES, VERSION, is_ip, parse_target, url_host, validate_ports
+from .utils import (
+    CHECKS,
+    COMMON_PORTS,
+    SCHEMA_VERSION,
+    SERVICES,
+    VERSION,
+    is_ip,
+    parse_target,
+    url_host,
+    validate_checks,
+    validate_ports,
+)
 
 DNS_TYPES = ("A", "AAAA", "MX", "TXT", "NS")
 MAX_ADDRESSES = 16
@@ -224,6 +235,8 @@ async def scan_target(
     concurrency: int = 32,
     ports: tuple[int, ...] | None = None,
     show_sensitive_headers: bool = False,
+    *,
+    checks: tuple[str, ...] = CHECKS,
 ) -> dict[str, Any]:
     """Scan one host or URL; retain independent failures and close all DNS tasks."""
     selected = parse_target(target)
@@ -236,21 +249,39 @@ async def scan_target(
         raise ValueError("timeout must be between 0.1 and 120 seconds")
     if type(concurrency) is not int or not 1 <= concurrency <= 256:
         raise ValueError("concurrency must be an integer between 1 and 256")
+    checks = validate_checks(checks)
     ports = validate_ports(
         ports if ports is not None else tuple(sorted(set(COMMON_PORTS) | ({selected.port} if selected.port else set())))
     )
     urls = (selected.url,) if selected.url else None
     started = time.monotonic()
     started_at = utc_now()
+    reason = "Not selected (--only)"
+    sections = {
+        "dns": {"status": "skipped", "reason": reason, "records": {}},
+        "ports": {
+            "status": "skipped",
+            "reason": reason,
+            "resolution": {"status": "skipped", "addresses": [], "truncated": False},
+            "results": [],
+        },
+        "http": {"status": "skipped", "reason": reason, "results": []},
+    }
     async with resolver_context(timeout, None) as resolver:
-        dns_result, port_result, http = await gather_checks(
-            enumerate_dns(selected.host, timeout, resolver),
-            scan_ports(selected.host, timeout, concurrency, ports, resolver),
-            scan_http(selected.host, timeout, urls, resolver, show_sensitive_headers),
-        )
+
+        async def run_check(kind: str) -> dict[str, Any]:
+            if kind == "dns":
+                return await enumerate_dns(selected.host, timeout, resolver)
+            if kind == "ports":
+                return await scan_ports(selected.host, timeout, concurrency, ports, resolver)
+            return await scan_http(selected.host, timeout, urls, resolver, show_sensitive_headers)
+
+        results = await gather_checks(*(run_check(kind) for kind in checks))
+        sections.update(zip(checks, results, strict=True))
+    dns_result, port_result, http = (sections[kind] for kind in CHECKS)
     usable = (
         port_result["resolution"]["status"] == "ok"
-        or any(record["status"] == "ok" for record in dns_result["records"].values())
+        or any(record["status"] in {"ok", "no_answer"} for record in dns_result["records"].values())
         or any(result["status"] == "ok" for result in http["results"])
     )
     status = (
@@ -274,12 +305,15 @@ async def scan_target(
         "duration_seconds": round(time.monotonic() - started, 3),
         "status": status,
         "settings": {
+            "checks": list(checks),
             "timeout_seconds": timeout,
             "tcp_concurrency": concurrency,
-            "ports": list(ports),
-            "http_urls": list(urls)
-            if urls
-            else [f"{scheme}://{url_host(selected.host)}/" for scheme in ("https", "http")],
+            "ports": list(ports) if "ports" in checks else [],
+            "http_urls": (
+                list(urls) if urls else [f"{scheme}://{url_host(selected.host)}/" for scheme in ("https", "http")]
+            )
+            if "http" in checks
+            else [],
             "show_sensitive_headers": show_sensitive_headers,
         },
         "summary": {

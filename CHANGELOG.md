@@ -1,7 +1,13 @@
 # Changelog
 
-## 1.1.1
+## 1.2.0
 
+- Add `--only dns`, `--only ports`, `--only http`, and combined selections.
+- Add `--open` to show only open TCP ports while retaining complete JSON reports.
+- Show the selected checks and keep unselected checks out of terminal tables.
+- Record selected checks and explicit skipped sections in JSON schema 1.2.
+- Treat answered DNS queries without records as useful results in DNS-only scans.
+- Preserve a failed scan's exit code when its output pipe closes.
 - Use cmtrl consistently in project credits, licensing, and package metadata.
 
 ## 1.1.0

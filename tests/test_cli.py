@@ -23,6 +23,11 @@ class CliTests(unittest.TestCase):
             ["-t", "example.com", "--timeout", "nan"],
             ["-t", "example.com", "--concurrency", "0"],
             ["-t", "example.com", "--output-file", "report.json"],
+            ["localhost", "--only", ""],
+            ["localhost", "--only", "dns,"],
+            ["localhost", "--only", "tls"],
+            ["localhost", "--only", "http", "-p", "80"],
+            ["localhost", "--only", "dns", "--open"],
         ):
             with (
                 self.subTest(arguments=arguments),
@@ -61,6 +66,14 @@ class CliTests(unittest.TestCase):
             result = main(["-t", "localhost", "-o", "json"])
         self.assertEqual(result, 1)
         self.assertIn("denied", errors.getvalue())
+
+    def test_closed_output_pipe_preserves_failed_scan_exit_code(self):
+        with (
+            patch("netscope.cli.scan_target", AsyncMock(return_value={"status": "failed"})),
+            patch("netscope.cli.emit_report", return_value=False),
+            redirect_stderr(io.StringIO()),
+        ):
+            self.assertEqual(main(["localhost", "--json"]), 1)
 
     def test_ctrl_c_exit_code(self):
         def interrupt(coroutine):

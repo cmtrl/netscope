@@ -14,6 +14,26 @@ The HTTP request is independent: `-p 22` does not suppress a URL's HTTP check.
 Port ranges are inclusive, duplicates are removed, and at most 1024 ports and
 16 resolved addresses are selected. Address truncation is shown and recorded.
 
+## Selecting checks and displaying open ports
+
+All three checks run by default. Use `--only dns`, `--only ports`, or
+`--only http` to run one check. Combine them with commas, for example
+`--only dns,http`. Duplicates are removed and names are case-insensitive.
+An empty selection or unknown check is an argument error. `-p` and `--open`
+require TCP probing to be selected.
+
+Unselected sections have `status: "skipped"`, a reason, and empty result
+collections in JSON. `settings.checks` lists the selected checks; disabled TCP
+and HTTP checks have empty `settings.ports` and `settings.http_urls` arrays.
+Only selected checks run. Disabling DNS enumeration does not suppress the A/AAAA
+lookups needed to connect to a hostname. DNS-only scans of IP addresses or
+localhost return a skipped DNS section and exit 1 because no results were obtained.
+
+`--open` filters the terminal TCP table only. Closed, timed-out, and failed
+probes remain in summary counts and JSON, including with `--open --json`.
+The terminal reports how many rows were hidden and warns about inconclusive
+probes. Unselected checks are omitted from terminal tables and counts.
+
 ## DNS and connection resolution
 
 A, AAAA, MX, TXT, and NS queries run concurrently using dnspython. Results have
@@ -80,9 +100,10 @@ atomically; the parent directory must exist. Reports are saved before terminal
 rendering, including when a pipe consumer closes early. On POSIX the file mode
 is 0600. Default filenames contain a shortened target and UTC timestamp.
 
-Schema 1.1 keeps the sections from schema 1.0 and adds summary counts, selected
-HTTP URLs, header-redaction settings, and DNS TTLs. HTTP headers remain an array
-of `{ "name": "...", "value": "..." }` objects to preserve duplicates.
+Schema 1.2 keeps the sections from schema 1.1 and adds `settings.checks` plus
+skipped TCP/HTTP sections for unselected checks. Schema 1.1 introduced summary
+counts, selected HTTP URLs, header-redaction settings, and DNS TTLs. HTTP headers
+remain an array of `{ "name": "...", "value": "..." }` objects to preserve duplicates.
 
 | Field | Contents |
 | --- | --- |
@@ -90,7 +111,7 @@ of `{ "name": "...", "value": "..." }` objects to preserve duplicates.
 | `target`, `target_type` | Normalized hostname/IP and its kind |
 | `started_at`, `finished_at`, `duration_seconds` | UTC times and monotonic elapsed duration |
 | `status` | `completed`, `partial`, or `failed` |
-| `settings` | Timeout, concurrency, selected ports, HTTP URLs, header visibility |
+| `settings` | Selected checks, timeout, concurrency, selected ports, HTTP URLs, header visibility |
 | `summary` | Port states, DNS record count, HTTP response count, missing-header observations |
 | `dns` | Section status, per-type records and errors, or skip reason |
 | `ports` | Address-resolution details and per-address/port results |
@@ -106,6 +127,8 @@ vulnerabilities. Failed HTTP requests do not invent missing-header findings.
 | `2` | Invalid arguments |
 | `130` | Interrupted with Ctrl+C |
 
-Successful address resolution, any DNS record, or an HTTP response counts as
-useful data. Read the report's section states for precise automation. Security
-header flags do not change the exit code.
+Successful TCP address resolution, an answered DNS query (including `no_answer`),
+or an HTTP response counts as useful data. Skipped checks do not turn failed
+checks into successes. Read the report's section states for precise automation.
+Security header flags and `--open` do not change the exit code. A closed output
+pipe does not change a failed scan's exit code either.
