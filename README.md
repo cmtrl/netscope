@@ -29,6 +29,10 @@ checks work.
 The checks run with `asyncio`, `aiohttp`, and `dnspython`. The terminal output
 uses `rich`.
 
+The package is being prepared for PyPI as `cmtrl-netscope`. The command stays
+`netscope`. See the [publishing guide](https://github.com/cmtrl/netscope/blob/main/docs/PUBLISHING.md)
+for the release setup.
+
 ## Setup
 
 Requires Python **3.10 or newer**. No root privileges needed.
@@ -96,7 +100,7 @@ Redirects are shown without being followed, and HTTPS certificate verification
 stays enabled. A failed check doesn't discard results from the other checks.
 
 More detail on result states, timeouts, proxies, JSON fields, and exit codes is
-in [docs/REFERENCE.md](docs/REFERENCE.md).
+in [docs/REFERENCE.md](https://github.com/cmtrl/netscope/blob/main/docs/REFERENCE.md).
 
 ## Working on the code
 
@@ -132,4 +136,4 @@ If you find a bug or have a suggestion, an issue or pull request is welcome.
 
 ## License
 
-[MIT](LICENSE) · Copyright (c) 2026 Ayoub Alshammari (cmtrl).
+[MIT](https://github.com/cmtrl/netscope/blob/main/LICENSE) · Copyright (c) 2026 Ayoub Alshammari (cmtrl).

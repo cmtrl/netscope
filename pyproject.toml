@@ -3,7 +3,7 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "netscope-cli"
+name = "cmtrl-netscope"
 version = "1.0.0"
 description = "A Python CLI for checking DNS records, TCP ports, and HTTP headers"
 authors = [{name = "Ayoub Alshammari"}]
@@ -19,6 +19,9 @@ classifiers = [
 
 [project.urls]
 "GitHub profile" = "https://github.com/cmtrl"
+Repository = "https://github.com/cmtrl/netscope"
+Issues = "https://github.com/cmtrl/netscope/issues"
+Documentation = "https://github.com/cmtrl/netscope/blob/main/docs/REFERENCE.md"
 
 [project.scripts]
 netscope = "netscope.cli:main"
