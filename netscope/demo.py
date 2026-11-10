@@ -5,7 +5,17 @@ from __future__ import annotations
 import argparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
+from socketserver import TCPServer
 import sys
+
+
+class DemoServer(ThreadingHTTPServer):
+    def server_bind(self) -> None:
+        # HTTPServer performs a reverse-DNS lookup even for loopback. This
+        # fixture already knows its name and should start without a DNS server.
+        TCPServer.server_bind(self)
+        self.server_name = "localhost"
+        self.server_port = self.server_address[1]
 
 
 class DemoHandler(BaseHTTPRequestHandler):
@@ -50,7 +60,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
     try:
-        with ThreadingHTTPServer(("127.0.0.1", args.port), DemoHandler) as server:
+        with DemoServer(("127.0.0.1", args.port), DemoHandler) as server:
             port = server.server_port
             print(f"Local demo server: http://127.0.0.1:{port}/", flush=True)
             print(

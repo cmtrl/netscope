@@ -87,9 +87,10 @@ class CommandProcessTests(unittest.TestCase):
         self.assertEqual(report["ports"]["status"], "skipped")
         self.assertEqual(report["http"]["results"][0]["status_code"], 200)
 
-    def test_open_view_keeps_closed_port_results_in_json(self):
+    def test_open_view_keeps_nonopen_port_results_in_json(self):
         with socket.socket() as closed, tempfile.TemporaryDirectory() as directory:
-            # Reserve a non-listening port so another process cannot claim it.
+            # macOS may time out on a bound, non-listening socket instead of
+            # refusing it. Both outcomes must remain in the unfiltered report.
             closed.bind(("127.0.0.1", 0))
             closed_port = closed.getsockname()[1]
             path = Path(directory) / "report.json"
@@ -101,6 +102,8 @@ class CommandProcessTests(unittest.TestCase):
                     "-p",
                     f"{self.port},{closed_port}",
                     "--open",
+                    "--timeout",
+                    "0.2",
                     "--no-color",
                     "-o",
                     "json",
@@ -110,19 +113,20 @@ class CommandProcessTests(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 0, result.stderr)
             report = json.loads(path.read_text(encoding="utf-8"))
-            self.assertEqual(
-                {item["port"]: item["status"] for item in report["ports"]["results"]},
-                {self.port: "open", closed_port: "closed"},
-            )
+            states = {item["port"]: item["status"] for item in report["ports"]["results"]}
+            self.assertEqual(states[self.port], "open")
+            self.assertIn(states[closed_port], {"closed", "timeout"})
+            self.assertEqual(report["summary"]["ports"][states[closed_port]], 1)
             self.assertEqual(report["http"]["status"], "skipped")
             self.assertEqual(report["settings"]["http_urls"], [])
-            self.assertIn("1 closed", result.stdout)
             self.assertIn("1 other probe results hidden", result.stdout)
             self.assertNotIn(str(closed_port), result.stdout)
 
-            as_json = self.command([self.url, "--only", "ports", "-p", str(closed_port), "--open", "--json"])
+            as_json = self.command(
+                [self.url, "--only", "ports", "-p", str(closed_port), "--open", "--timeout", "0.2", "--json"]
+            )
             self.assertEqual(as_json.returncode, 0, as_json.stderr)
-            self.assertEqual(json.loads(as_json.stdout)["ports"]["results"][0]["status"], "closed")
+            self.assertIn(json.loads(as_json.stdout)["ports"]["results"][0]["status"], {"closed", "timeout"})
 
     def test_invalid_arguments_never_write_json(self):
         result = self.command([self.url, "-p", "1-65535", "--json"])
