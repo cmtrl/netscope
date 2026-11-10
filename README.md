@@ -1,7 +1,6 @@
 # NetScope
 
-A small Python CLI for DNS records, TCP ports, and HTTP headers. Useful for
-checking a host or taking a quick look at a local web app.
+A Python CLI for checking DNS records, TCP ports, and HTTP headers.
 
 By **cmtrl cmtrl** · [@cmtrl](https://github.com/cmtrl)
 
@@ -14,20 +13,18 @@ By **cmtrl cmtrl** · [@cmtrl](https://github.com/cmtrl)
                                |_|
 ```
 
-I'm using this project to learn more about Python networking, async code, and
-CLI design. Feedback and bug reports are welcome.
+I'm using this project to learn async Python and networking. It's still early,
+and I plan to keep improving it as I learn. Bug reports and suggestions are welcome.
 
 ## Install
 
-Python **3.11+**. No administrator privileges needed.
-
-If you use pipx:
+You'll need Python **3.11 or newer**. If you already use pipx:
 
 ```bash
 pipx install cmtrl-netscope
 ```
 
-Or use a virtual environment:
+Otherwise, install it in a virtual environment:
 
 ```bash
 python -m venv .venv
@@ -35,84 +32,79 @@ source .venv/bin/activate
 python -m pip install cmtrl-netscope
 ```
 
-On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1` instead.
-To upgrade an existing installation: `pipx upgrade cmtrl-netscope` or
-`python -m pip install --upgrade cmtrl-netscope` in its virtual environment.
+On Windows PowerShell, use `.venv\Scripts\Activate.ps1` to activate it.
+To update, run `pipx upgrade cmtrl-netscope` or
+`python -m pip install --upgrade cmtrl-netscope` in your virtual environment.
 
-## Try it
+## Usage
 
 ```bash
-# DNS, common TCP ports, and HTTP(S) headers
 netscope example.com
-
-# A specific web app: preserve the URL's scheme, port, and path
-netscope http://127.0.0.1:8080/health -p 8080
-
-# Custom ports and inclusive ranges, up to 1024 ports
 netscope example.com -p 22,80,443,8000-8005
-
-# Save a report
-netscope example.com -o json --output-file report.json
-
-# JSON on stdout, suitable for scripts and pipes
-netscope example.com --json > report.json
-
-# All captured HTTP headers in the terminal
-netscope example.com --verbose
+netscope http://127.0.0.1:8080/health -p 8080
 ```
 
-The original `netscope -t example.com` syntax still works.
-`--timeout 3` changes the per-operation timeout; `--concurrency 12` limits
-simultaneous TCP checks. Run `netscope --help` for all options.
+A bare hostname checks DNS, the common TCP ports, HTTP on 80, and HTTPS on 443.
+A URL checks that HTTP endpoint, including its port and path. The `-p` option
+sets the TCP ports; it accepts lists and ranges, up to 1024 ports.
 
-## A local demo in two terminals
+Save the results to a file:
 
-Start the included HTTP fixture:
+```bash
+netscope example.com -o json --output-file report.json
+```
+
+Use `--json` for JSON on stdout, or `--verbose` to see all captured HTTP headers
+in the terminal. The original `-t example.com` argument also works.
+
+Run `netscope --help` for the remaining options, including timeouts and concurrency.
+
+## Try it locally
+
+With NetScope installed, start the included demo server:
 
 ```bash
 netscope-demo
 ```
 
-Then open another terminal with NetScope available and run:
+Leave that running. In a second terminal, activate the same environment and run:
 
 ```bash
 netscope http://127.0.0.1:8080 -p 8080 -o json --output-file demo.json
 ```
 
-This runs a real scan against your own machine. Expect one open TCP port,
-HTTP 200, CSP present, and X-Frame-Options missing. The fixture deliberately
-omits that header so you can see the check. HSTS is not applicable to plain
-HTTP, and forward DNS is skipped for an IP target. Stop the server with Ctrl+C.
-If port 8080 is busy, use `netscope-demo --port 8081` and change the scan URL and
-port to match.
+You'll see port 8080 open, an HTTP 200 response, and the header checks. The server
+leaves out X-Frame-Options so there's a missing header to show. HSTS doesn't apply
+to plain HTTP, and DNS is skipped for the IP target. Press Ctrl+C in the server
+terminal when you're done.
 
-![NetScope checking response headers on a local HTTP fixture](https://raw.githubusercontent.com/cmtrl/netscope/main/docs/assets/local-demo.png)
+If 8080 is busy, start `netscope-demo --port 8081` and use 8081 in the scan too.
 
-There is a [recording walkthrough](https://github.com/cmtrl/netscope/blob/main/docs/DEMO.md)
-with exact commands, captions, and an optional voiceover. You can also
-[download the captioned demo MP4](https://github.com/cmtrl/netscope/raw/refs/heads/main/docs/assets/netscope-demo-x.mp4).
+![Header checks against the local demo server](https://raw.githubusercontent.com/cmtrl/netscope/main/docs/assets/local-demo.png)
 
-## What the checks mean
+[Watch the demo](https://github.com/cmtrl/netscope/raw/refs/heads/main/docs/assets/netscope-demo-x.mp4)
+· [Run or record your own](https://github.com/cmtrl/netscope/blob/main/docs/DEMO.md)
 
-- DNS queries A, AAAA, MX, TXT, and NS concurrently. Local hosts-file entries
-  and localhost work for connections; DNS enumeration shows actual DNS records.
-- TCP results distinguish open, refused, timed-out, and failed connections.
-  Service names are conventional port hints, not confirmed application names.
-- Bare hosts get HTTP/80 and HTTPS/443 checks. A URL checks only that endpoint;
-  an explicit URL port is also included in the default TCP selection.
-- HTTPS verification stays enabled. Redirects are reported without being followed.
-- HSTS, CSP, and X-Frame-Options checks report header presence. They do not
-  validate a policy or prove that a site is secure or vulnerable.
-- Cookie and authentication response headers are redacted in both terminal
-  output and JSON. Use `--show-sensitive-headers` only when you need those values.
+## Reading the results
 
-Use NetScope on systems you own or have permission to check. It is a focused
-reconnaissance tool, not a vulnerability scanner.
+An open port means a TCP connection succeeded. The service label is a hint based
+on the port number. Technology headers are whatever the server reports.
 
-See the [reference](https://github.com/cmtrl/netscope/blob/main/docs/REFERENCE.md)
-for JSON fields, proxy behavior, timeouts, and exit codes.
+The security-header checks look for HSTS, CSP, and X-Frame-Options. They check
+presence, not whether a policy is useful or correctly configured. A missing
+header alone isn't proof of a vulnerability.
 
-## Working on the code
+HTTPS certificates are verified, and redirects are shown without being followed.
+Cookie and authentication response headers are redacted in reports by default;
+`--show-sensitive-headers` includes their values when you need them.
+
+Use this on systems you own or have permission to check. The
+[reference](https://github.com/cmtrl/netscope/blob/main/docs/REFERENCE.md)
+covers DNS record types, result states, proxy behavior, JSON fields, and exit codes.
+
+## Development
+
+Clone the repository, create a virtual environment, then install from source:
 
 ```bash
 git clone https://github.com/cmtrl/netscope.git
@@ -123,23 +115,19 @@ python -m pip install -e .
 python -W error -m unittest discover -s tests -v
 ```
 
-The code is split into `cli.py`, `scanner.py`, `resolver.py`, `utils.py`, and the
-local demo fixture in `demo.py`. Tests use local HTTP/TLS and DNS servers; they
-do not scan public hosts. [CI](https://github.com/cmtrl/netscope/actions/workflows/ci.yml)
-checks Linux, macOS, Windows, and Python 3.11, 3.12, and 3.14.
-
-Optional development checks:
-
-```bash
-python -m pip install ruff build twine
-ruff check .
-ruff format --check .
-python -m build
-python -m twine check --strict dist/*
-```
+The tests use local DNS, HTTP, and TLS servers. The
+[CI workflow](https://github.com/cmtrl/netscope/actions/workflows/ci.yml)
+also checks installation on Linux, Windows, and macOS.
 
 See [CONTRIBUTING.md](https://github.com/cmtrl/netscope/blob/main/CONTRIBUTING.md)
-and the [changelog](https://github.com/cmtrl/netscope/blob/main/CHANGELOG.md).
+for development checks and the [changelog](https://github.com/cmtrl/netscope/blob/main/CHANGELOG.md)
+for release notes.
+
+## Credits
+
+NetScope's initial implementation, tests, and documentation were developed with
+assistance from OpenAI Codex. Project direction and maintenance by cmtrl
+cmtrl (@cmtrl).
 
 ## License
 

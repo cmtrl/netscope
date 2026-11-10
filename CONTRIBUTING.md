@@ -1,19 +1,20 @@
 # Contributing
 
-Bug reports, documentation fixes, and small improvements are welcome.
+Found a bug? Open an issue with your OS, Python and NetScope versions, the
+command you ran, and what happened. A small local example helps. Remove private
+hostnames and any header values you don't want to make public before attaching
+output.
 
-For a bug report, include your operating system, Python version, NetScope
-version, the command, and what you expected. Replace private hostnames or other
-sensitive data before attaching a report. A local reproduction is especially
-helpful.
+For code changes, install from source in a virtual environment:
 
-For a code change:
+```bash
+python -m pip install -e .
+python -m pip install ruff
+python -W error -m unittest discover -s tests -v
+ruff check .
+ruff format --check .
+```
 
-1. Install from source with `python -m pip install -e .` in a virtual environment.
-2. Make a focused change and add a regression test when behavior changes.
-3. Run `python -W error -m unittest discover -s tests -v`.
-4. Run `ruff check .` and `ruff format --check .`.
-5. Explain the behavior and checks in your pull request.
-
-Tests must use local fixtures or controlled simulation rather than scan public
-hosts. Update the README/reference when you change an option or report field.
+Add a regression test when you fix a bug. Tests should use local servers or
+controlled simulation. Update the reference when an option or report field
+changes, and describe what you changed in the pull request.
