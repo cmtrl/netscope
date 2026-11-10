@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import errno
 import io
 import json
 from datetime import datetime, timezone
@@ -216,6 +217,39 @@ def default_output(target: str) -> Path:
     return Path(f"netscope-{label}-{stamp}.json")
 
 
+def silence_stdout() -> None:
+    """Prevent Python's final stdout flush from repeating a closed-pipe error."""
+    try:
+        with open(os.devnull, "w", encoding="utf-8") as null:
+            os.dup2(null.fileno(), sys.stdout.fileno())
+    except (OSError, ValueError, io.UnsupportedOperation):
+        sys.stdout = io.StringIO()
+
+
+def emit_report(console: Console, report: dict[str, Any], json_output: bool, verbose: bool) -> bool:
+    try:
+        if json_output:
+            sys.stdout.write(json.dumps(report, ensure_ascii=True, indent=2, allow_nan=False) + "\n")
+        else:
+            console.print(
+                Panel(
+                    Text(BANNER, style="bold cyan"),
+                    subtitle=f"v{VERSION} · cmtrl · DNS / TCP / HTTP",
+                    border_style="cyan",
+                )
+            )
+            render_report(console, report, verbose)
+        sys.stdout.flush()
+    except OSError as exc:
+        # Windows reports a closed output pipe as EINVAL rather than EPIPE.
+        # Limit this handling to terminal writes: EINVAL from export is an error.
+        if isinstance(exc, BrokenPipeError) or (os.name == "nt" and exc.errno == errno.EINVAL):
+            silence_stdout()
+            return False
+        raise
+    return True
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -238,18 +272,8 @@ def main(argv: list[str] | None = None) -> int:
         destination = None
         if args.output == "json":
             destination = write_json(report, args.output_file or default_output(target))
-        if args.json:
-            sys.stdout.write(json.dumps(report, ensure_ascii=True, indent=2, allow_nan=False) + "\n")
-            sys.stdout.flush()
-        else:
-            console.print(
-                Panel(
-                    Text(BANNER, style="bold cyan"),
-                    subtitle=f"v{VERSION} · cmtrl · DNS / TCP / HTTP",
-                    border_style="cyan",
-                )
-            )
-            render_report(console, report, args.verbose)
+        if not emit_report(console, report, args.json, args.verbose):
+            return 0
         if destination:
             (error_console if args.json else console).print(
                 Text.assemble("JSON saved: ", safe(destination)), style="green"
@@ -259,12 +283,7 @@ def main(argv: list[str] | None = None) -> int:
         error_console.print("Scan cancelled.", style="yellow")
         return 130
     except BrokenPipeError:
-        # Redirect the underlying descriptor too: Python flushes __stdout__ at exit.
-        try:
-            with open(os.devnull, "w", encoding="utf-8") as null:
-                os.dup2(null.fileno(), sys.stdout.fileno())
-        except (OSError, ValueError, io.UnsupportedOperation):
-            sys.stdout = io.StringIO()
+        silence_stdout()
         return 0
     except (OSError, ValueError) as exc:
         error_console.print(Text.assemble("Error: ", safe(exc)), style="red")
