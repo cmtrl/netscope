@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -71,8 +72,9 @@ class ExportTests(unittest.TestCase):
             path.write_text("old content")
             report = {"target": "example.com", "text": "café", "nested": [1, None]}
             self.assertEqual(write_json(report, path), path)
-            self.assertEqual(json.loads(path.read_text()), report)
-            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8")), report)
+            if os.name == "posix":
+                self.assertEqual(path.stat().st_mode & 0o777, 0o600)
             self.assertEqual(list(Path(directory).iterdir()), [path])
 
     def test_write_failure_preserves_existing_file_and_cleans_temp(self):

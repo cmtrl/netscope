@@ -1,4 +1,4 @@
-# Runtime dependencies; supported on Python 3.10+.
-aiohttp>=3.12.14,<4.0
-dnspython>=2.7.0,<3.0
+# Runtime dependencies; supported on Python 3.11+.
+aiohttp>=3.14.5,<4.0
+dnspython>=2.9.2,<3.0
 rich>=13.9.4,<15.0

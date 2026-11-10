@@ -6,3 +6,6 @@ build/
 dist/
 .ruff_cache/
 netscope-*.json
+.coverage
+htmlcov/
+demo.json
