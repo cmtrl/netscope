@@ -29,20 +29,19 @@ checks work.
 The checks run with `asyncio`, `aiohttp`, and `dnspython`. The terminal output
 uses `rich`.
 
-The package is being prepared for PyPI as `cmtrl-netscope`. The command stays
-`netscope`. See the [publishing guide](https://github.com/cmtrl/netscope/blob/main/docs/PUBLISHING.md)
-for the release setup.
+Available on [PyPI as `cmtrl-netscope`](https://pypi.org/project/cmtrl-netscope/).
+The command is `netscope`.
 
 ## Setup
 
 Requires Python **3.10 or newer**. No root privileges needed.
 
-Download the source, open its folder, then run:
+Create a virtual environment and install from PyPI:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
+python -m pip install cmtrl-netscope
 ```
 
 On Windows PowerShell, activate with `.venv\Scripts\Activate.ps1` instead.
@@ -51,37 +50,39 @@ Use `python3` in place of `python` if that's how Python is installed on your sys
 ## Usage
 
 ```bash
-python main.py -t example.com
+netscope -t example.com
 ```
 
 Save a JSON report:
 
 ```bash
-python main.py -t example.com -o json --output-file report.json
+netscope -t example.com -o json --output-file report.json
 ```
 
 Set a shorter timeout or change the number of concurrent TCP checks:
 
 ```bash
-python main.py -t example.com --timeout 3 --concurrency 12
+netscope -t example.com --timeout 3 --concurrency 12
 ```
 
 IP addresses work too. Forward DNS enumeration is skipped for IP targets:
 
 ```bash
-python main.py -t 127.0.0.1
-python main.py -t ::1
+netscope -t 127.0.0.1
+netscope -t ::1
 ```
 
 Use a bare hostname or IP address, without `https://`, a path, or a port number.
 
 ```bash
-python main.py --help
+netscope --help
 ```
 
-You can also install the command in your virtual environment:
+To install from source instead, run these commands in your virtual environment:
 
 ```bash
+git clone https://github.com/cmtrl/netscope.git
+cd netscope
 python -m pip install .
 netscope -t example.com
 # Or: python -m netscope -t example.com
@@ -103,6 +104,9 @@ More detail on result states, timeouts, proxies, JSON fields, and exit codes is
 in [docs/REFERENCE.md](https://github.com/cmtrl/netscope/blob/main/docs/REFERENCE.md).
 
 ## Working on the code
+
+Clone the source as shown above. For development, `python -m pip install -e .`
+lets the installed command use your local edits.
 
 ```text
 main.py              entry point

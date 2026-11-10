@@ -5,15 +5,12 @@ Keep notifications and unrelated windows out of the recording.
 
 ## Commands
 
-Until the PyPI release is live, install from the GitHub source in a virtual
-environment:
+Install from PyPI in a virtual environment:
 
 ```bash
-git clone https://github.com/cmtrl/netscope.git
-cd netscope
 python -m venv .venv
 source .venv/bin/activate
-python -m pip install .
+python -m pip install cmtrl-netscope
 ```
 
 For a repeatable demo, start a small server in a second terminal:
@@ -55,5 +52,4 @@ an MP4. Check that the text is readable at phone size before posting.
 >
 > https://github.com/cmtrl/netscope
 
-After PyPI publishing succeeds, you can add `pip install cmtrl-netscope` to the
-post. Avoid using it as an installation claim before the release exists.
+You can also include the installation command: `pip install cmtrl-netscope`.
