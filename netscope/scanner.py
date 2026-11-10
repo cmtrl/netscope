@@ -116,7 +116,12 @@ async def probe_port(address: str, port: int, timeout: float, semaphore: asyncio
         except asyncio.TimeoutError:
             result.update(status="timeout", error="TCP connection timed out")
         except OSError as exc:
-            if exc.errno == errno.ECONNREFUSED:
+            # Proactor socket errors may retain Winsock's WSAECONNREFUSED code.
+            if (
+                isinstance(exc, ConnectionRefusedError)
+                or exc.errno in {errno.ECONNREFUSED, 10061}
+                or getattr(exc, "winerror", None) == 10061
+            ):
                 result["status"] = "closed"
             else:
                 result.update(status="error", error=str(exc))

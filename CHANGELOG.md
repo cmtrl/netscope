@@ -8,6 +8,8 @@
 - Record selected checks and explicit skipped sections in JSON schema 1.2.
 - Treat answered DNS queries without records as useful results in DNS-only scans.
 - Preserve a failed scan's exit code when its output pipe closes.
+- Recognize Windows connection-refused errors as closed TCP ports.
+- Defer Ctrl+C cancellation to avoid interrupting a Python 3.11 socket callback.
 - Use cmtrl consistently in project credits, licensing, and package metadata.
 
 ## 1.1.0

@@ -79,6 +79,7 @@ class PortTests(unittest.IsolatedAsyncioTestCase):
         loop = asyncio.get_running_loop()
         for error, expected in (
             (ConnectionRefusedError(errno.ECONNREFUSED, "refused"), "closed"),
+            (OSError(10061, "Winsock connection refused"), "closed"),
             (asyncio.TimeoutError(), "timeout"),
             (OSError(errno.ENETUNREACH, "unreachable"), "error"),
         ):

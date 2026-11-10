@@ -10,7 +10,9 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 import os
+import signal
 import sys
+import threading
 from typing import Any
 
 from rich.console import Console
@@ -321,10 +323,28 @@ def main(argv: list[str] | None = None) -> int:
     try:
 
         async def run() -> dict[str, Any]:
-            with error_console.status(Text.assemble("Scanning ", safe(target), "…"), spinner="dots"):
-                return await scan_target(
-                    target, args.timeout, args.concurrency, args.ports, args.show_sensitive_headers, checks=args.only
-                )
+            loop = asyncio.get_running_loop()
+            task = asyncio.current_task()
+            previous_handler = signal.getsignal(signal.SIGINT)
+            deferred_interrupt = os.name == "posix" and threading.current_thread() is threading.main_thread()
+            if deferred_interrupt:
+                # Defer cancellation to the event loop. A synchronous SIGINT can
+                # cancel a future midway through a Python 3.11 socket callback.
+                loop.add_signal_handler(signal.SIGINT, task.cancel)
+            try:
+                with error_console.status(Text.assemble("Scanning ", safe(target), "…"), spinner="dots"):
+                    return await scan_target(
+                        target,
+                        args.timeout,
+                        args.concurrency,
+                        args.ports,
+                        args.show_sensitive_headers,
+                        checks=args.only,
+                    )
+            finally:
+                if deferred_interrupt:
+                    loop.remove_signal_handler(signal.SIGINT)
+                    signal.signal(signal.SIGINT, previous_handler)
 
         report = asyncio.run(run())
         destination = None
@@ -338,7 +358,7 @@ def main(argv: list[str] | None = None) -> int:
                 Text.assemble("JSON saved: ", safe(destination)), style="green"
             )
         return exit_code
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, asyncio.CancelledError):
         error_console.print("Scan cancelled.", style="yellow")
         return 130
     except BrokenPipeError:
