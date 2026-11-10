@@ -4,6 +4,17 @@ Use the local fixture below so the result is repeatable. It is a real HTTP
 server and a real scan of your machine. It demonstrates TCP, HTTP headers, and
 JSON export. It does not demonstrate external DNS enumeration.
 
+## Ready-made clip
+
+You can use the captioned 28-second MP4 generated from a real local NetScope run:
+
+- [Portrait MP4 for X](https://github.com/cmtrl/netscope/raw/refs/heads/main/docs/assets/netscope-demo-x.mp4)
+- [Landscape MP4](https://github.com/cmtrl/netscope/raw/refs/heads/main/docs/assets/netscope-demo-landscape.mp4)
+- [Post text](https://github.com/cmtrl/netscope/blob/main/docs/assets/x-post.txt)
+
+The clips are silent. The steps below explain how to record your own run and
+add your voice if you prefer.
+
 ## 1. Prepare before recording
 
 Open a clean terminal, enable Do Not Disturb, and close unrelated windows.

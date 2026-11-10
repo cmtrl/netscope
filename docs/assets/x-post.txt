@@ -1,0 +1,9 @@
+Built my first public Python project: NetScope.
+
+DNS records, TCP ports, HTTP headers and JSON export in one CLI.
+
+pip install cmtrl-netscope
+
+Code: https://github.com/cmtrl/netscope
+
+If you try it, what should I improve?

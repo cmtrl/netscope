@@ -89,7 +89,8 @@ port to match.
 ![NetScope checking response headers on a local HTTP fixture](https://raw.githubusercontent.com/cmtrl/netscope/main/docs/assets/local-demo.png)
 
 There is a [recording walkthrough](https://github.com/cmtrl/netscope/blob/main/docs/DEMO.md)
-with exact commands, captions, and an optional voiceover.
+with exact commands, captions, and an optional voiceover. You can also
+[download the captioned demo MP4](https://github.com/cmtrl/netscope/raw/refs/heads/main/docs/assets/netscope-demo-x.mp4).
 
 ## What the checks mean
 
