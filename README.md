@@ -86,6 +86,8 @@ HTTP, and forward DNS is skipped for an IP target. Stop the server with Ctrl+C.
 If port 8080 is busy, use `netscope-demo --port 8081` and change the scan URL and
 port to match.
 
+![NetScope checking response headers on a local HTTP fixture](https://raw.githubusercontent.com/cmtrl/netscope/main/docs/assets/local-demo.png)
+
 There is a [recording walkthrough](https://github.com/cmtrl/netscope/blob/main/docs/DEMO.md)
 with exact commands, captions, and an optional voiceover.
 
